@@ -1,3 +1,4 @@
+flask==3.0.0
 pyTelegramBotAPI==3.6.6
 requests[socks]
 gunicorn

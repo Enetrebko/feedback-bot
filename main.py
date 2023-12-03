@@ -18,11 +18,17 @@ import logging
 import telebot
 from peewee import IntegerField, IntegrityError, Model, SqliteDatabase
 
+import os
+from flask import Flask, request
+
+server = Flask(__name__)
+
 config = configparser.ConfigParser()
 config.read("config.ini")
 parsed_types = config.get("Tech", "forward-types").split(";")
 logging.basicConfig(format=config.get("Tech", "logger-format"))
-bot = telebot.TeleBot(config.get("Tech", "token"))
+TOKEN = config.get("Tech", "token")
+bot = telebot.TeleBot(TOKEN)
 
 db = SqliteDatabase("db.sqlite3")
 
@@ -48,28 +54,32 @@ class Message(Model):
 db.create_tables([Block, Message])
 
 
-class Filters:
-    def is_user(message):
-        return (
-            message.chat.id != config.get("Tech", "support-chat-id")
-            and message.chat.type == "private"
-        )
+# class Filters:
+def is_user(message):
+    return (
+        message.chat.id != config.get("Tech", "support-chat-id")
+        and message.chat.type == "private"
+    )
 
-    def is_admin(message):
-        return message.chat.id == config.getint("Tech", "support-chat-id")
 
-    def is_answer(message):
-        return (
-            message.chat.id == config.getint("Tech", "support-chat-id")
-            and message.reply_to_message is not None
-            and message.reply_to_message.forward_date is not None
-        )
+def is_admin(message):
+    return message.chat.id == config.getint("Tech", "support-chat-id")
 
-    def is_blocked(message):
-        return Block.select().where(Block.user_id == message.chat.id).exists()
 
-    def is_not_blocked(message):
-        return not Block.select().where(Block.user_id == message.chat.id).exists()
+def is_answer(message):
+    return (
+        message.chat.id == config.getint("Tech", "support-chat-id")
+        and message.reply_to_message is not None
+        and message.reply_to_message.forward_date is not None
+    )
+
+
+def is_blocked(message):
+    return Block.select().where(Block.user_id == message.chat.id).exists()
+
+
+def is_not_blocked(message):
+    return not Block.select().where(Block.user_id == message.chat.id).exists()
 
 
 @bot.message_handler(commands=["start"])
@@ -84,7 +94,7 @@ def send_help(message):
 
 @bot.message_handler(
     content_types=parsed_types,
-    func=lambda msg: Filters.is_user(msg) and Filters.is_not_blocked(msg),
+    func=lambda msg: is_user(msg) and is_not_blocked(msg),
 )
 def get_question(message):
     if config.getboolean("Tech", "success-question-message"):
@@ -95,12 +105,12 @@ def get_question(message):
     Message.create(from_=message.chat.id, id=sent.message_id).save()
 
 
-@bot.message_handler(func=Filters.is_user)
+@bot.message_handler(func=is_user)
 def get_error_question(message):
     bot.send_message(message.chat.id, config.get("Messages", "question-wasnt-sent"))
 
 
-@bot.message_handler(commands=["block"], func=Filters.is_answer)
+@bot.message_handler(commands=["block"], func=is_answer)
 def block(message):
     user_id = (
         Message.select()
@@ -118,7 +128,7 @@ def block(message):
     )
 
 
-@bot.message_handler(commands=["unblock"], func=Filters.is_answer)
+@bot.message_handler(commands=["unblock"], func=is_answer)
 def unblock(message):
     user_id = (
         Message.select()
@@ -136,7 +146,7 @@ def unblock(message):
     )
 
 
-@bot.message_handler(content_types=["text", "photo"], func=Filters.is_answer)
+@bot.message_handler(content_types=["text", "photo"], func=is_answer)
 def answer_question(message):
     to_user_id = (
         Message.select()
@@ -163,9 +173,24 @@ def answer_question(message):
         )
 
 
-def main():
-    bot.infinity_polling(none_stop=True, timeout=60)
+# def main():
+#     bot.delete_webhook()
+#     bot.infinity_polling(none_stop=True, timeout=60)
+
+
+@server.route('/' + TOKEN, methods=['POST'])
+def getMessage():
+    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+    return "!", 200
+
+
+@server.route("/")
+def webhook():
+    bot.remove_webhook()
+    bot.set_webhook(url=config.get("Tech", "url") + TOKEN)
+    return "!", 200
 
 
 if __name__ == "__main__":
-    main()
+    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+    # main()
