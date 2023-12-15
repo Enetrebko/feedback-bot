@@ -21,7 +21,7 @@ from peewee import IntegerField, IntegrityError, Model, SqliteDatabase
 import os
 from flask import Flask, request
 
-server = Flask(__name__)
+app = Flask(__name__)
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -178,13 +178,13 @@ def answer_question(message):
 #     bot.infinity_polling(none_stop=True, timeout=60)
 
 
-@server.route('/' + TOKEN, methods=['POST'])
+@app.route('/' + TOKEN, methods=['POST'])
 def getMessage():
     bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
     return "!", 200
 
 
-@server.route("/")
+@app.route("/")
 def webhook():
     bot.remove_webhook()
     bot.set_webhook(url=config.get("Tech", "url") + TOKEN)
@@ -192,5 +192,5 @@ def webhook():
 
 
 if __name__ == "__main__":
-    server.run(threaded=True, host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+    app.run(threaded=True, host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
     # main()
