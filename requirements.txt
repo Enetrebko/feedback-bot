@@ -5,3 +5,4 @@ gunicorn
 PySocks
 urllib3
 peewee==3.13.*
+gunicorn==19.6.0
