@@ -1,3 +1,1 @@
-import os
-print(os.getenv('token'))
-print(os.environ['token'])
+print(type(-4037035545))
