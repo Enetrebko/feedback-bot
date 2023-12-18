@@ -42,7 +42,6 @@ class Message(Model):
 db.create_tables([Block, Message])
 
 
-# class Filters:
 def is_user(message):
     return (
         message.chat.id != support_chat_id
