@@ -15,7 +15,7 @@ parsed_types = config.get("Tech", "forward-types").split(";")
 logging.basicConfig(format=config.get("Tech", "logger-format"))
 
 support_chat_id = int(os.environ.get("SUPPORT_CHAT_ID"))
-TOKEN = str(os.environ.get("TOKEN"))
+TOKEN = os.environ.get("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
 db = SqliteDatabase("db.sqlite3")
