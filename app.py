@@ -157,7 +157,7 @@ def answer_question(message):
             to_user_id,
             "Reply",
         )
-        print(to_user_id)
+        print("user:", to_user_id)
     if config.getboolean("Tech", "success-answer-message"):
         bot.send_message(
             message.chat.id,
