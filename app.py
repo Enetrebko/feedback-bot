@@ -14,7 +14,7 @@ config.read("config.ini")
 parsed_types = config.get("Tech", "forward-types").split(";")
 logging.basicConfig(format=config.get("Tech", "logger-format"))
 
-support_chat_id = os.environ.get("SUPPORT_CHAT_ID")
+support_chat_id = -4037035545 # os.environ.get("SUPPORT_CHAT_ID")
 TOKEN = str(os.environ.get("TOKEN"))
 bot = telebot.TeleBot(TOKEN)
 
